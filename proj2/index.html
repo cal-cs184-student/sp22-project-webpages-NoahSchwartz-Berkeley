@@ -1,7 +1,329 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <style>
+    body {
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+  </style>
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2020</h1>
+  <h1 align="middle">Project 2: Mesh Editor</h1>
+  <h2 align="middle">Andrew Chen, Noah Schwartz, CS184</h2>
+
+  <br><br>
+
+      <div>
+
+          <h2 align="middle">Overview</h2>
+          <p>
+              In this project, we built Bezier Curves for both 2D and 3D surfaces, and we also implemented edit properties on 3D meshes,
+              such as flipping surfaces, splitting surfaces, and sub dividing surfaces to make a smoother, more realistic overall mesh.
+              What stood out to us the most in this project was the overall sub division. Specifically how simple operations such as flipping
+              edges and splitting triangles can produce such a smooth and beautiful sub division algorithm that can polish any mesh.
+          </p>
+
+          <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+
+
+          <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+
+          <p>
+              de Casteljau's algorithm is used to generate Bezier Curves from any array of points. The algorithm first finds points along
+              each line segment between our data points, and it then connects each of those points to each other by creating
+              line segments between them. The algorithm continues this process until we only have one line segment left, and one
+              midpoint between them. That midpoint must lie on our Bezier Curve. We repeat for every point along the line segments of
+              our original data points, and each of the final midpoints generated from those generates our whole Bezier Curve for the data.
+
+              For this part of the question, we only implemented the first step of de Casteljau's algorithm: we found the intermediate points
+              of our data points, so if we have n points, we return n - 1 intermediate points. We are able to repeat this on each sub step to get the
+              final Bezier points that lay on the cure.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/1.png" align="middle" width="400px" />
+                          <figcaption align="middle">Data Points</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/2.png" align="middle" width="400px" />
+                          <figcaption align="middle">1 Step de Casteljau</figcaption>
+                      </td>
+                  </tr>
+                  <br />
+                  <tr>
+                      <td>
+                          <img src="images/3.png" align="middle" width="400px" />
+                          <figcaption align="middle">2 Steps de Casteljau</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/4.png" align="middle" width="400px" />
+                          <figcaption align="middle">3 Steps de Casteljau.</figcaption>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <img src="images/5.png" align="middle" width="400px" />
+                          <figcaption align="middle">4 Steps de Casteljau</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/6.png" align="middle" width="400px" />
+                          <figcaption align="middle">5 Steps de Casteljau</figcaption>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <img src="images/7.png" align="middle" width="400px" />
+                          <figcaption align="middle">de Casteljau Bezier Curve</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/8.png" align="middle" width="400px" />
+                          <figcaption align="middle">Different Curve</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+
+          <p>
+              Given any 3D surface, we can take many 2D de Casteljau Bezier Curves along the plane of the surface. For each of the
+              Bezier Curves, form a new Bezier curve for each point that lies along the 2D Bezier curves. Thus we'd have a Bezier surface, which is
+              generated from calling de Casteljau on the points in the planes and then calling de Casteljau on each of the points of the Bezier Curves generated from
+              the previous de Casteljau callings.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <img src="images/9.png" align="middle" width="400px" />
+                  <figcaption align="middle">3D de Casteljau Bezier Surface </figcaption>
+              </table>
+          </div>
+
+
+
+          <h2 align="middle">Section II: Sampling</h2>
+
+          <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+
+          <p>
+              We take a weighted average of each vector by all the vectors neighboring it, where each weight is made from taking the cross product of the vectors.
+              Thus each vector is adjusted by how fast its angle and magnitude transitions to the vectors neighboring it, so this weighted process creates a shading effect
+              on the mesh.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/10.png" align="middle" width="400px" />
+                          <figcaption align="middle">Without Shading</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/11.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With Shading</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          <h3 align="middle">Part 4: Half-edge flip</h3>
+
+          <p>
+              Here we flip an edge between two triangles. We don't create any new vertices nor edges, but merely reassign their locations and what each edge/vertex/face/halfedge
+              points to. Thus we modify the data such that each already existing element changes the structure of the mesh.
+              On our debugging journey, we first implemented edge flips, but when we completed the next part, edge-splits, we realized that flipping a split edge didn't work.
+              So we copied our code for edge splits, pasted it into edge flips, and downscaled our work to handle just the flip case without creating any new variables.
+              Since edge flip was a downscaled version of our implementation of edge split, every pointer reassignment process matched between our two versions, so that
+              no inconsistencies would arise when performing them together.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/12.png" align="middle" width="400px" />
+                          <figcaption align="middle">Without Flip</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/13.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With 1 Flip</figcaption>
+                      </td>
+                  </tr>
+                  <br />
+                  <tr>
+                      <td>
+                          <img src="images/14.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With More Flips</figcaption>
+                          <\td>
+                          </\td>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          <h3 align="middle">Part 5: Half-edge split</h3>
+
+          <p>
+              Here we split two connected triangles into 4 sub triangles. Unlike edge flips, since we created more triangles, we had to
+              make new variables for edges, faces, points, and half edges. We drew our diagram rigorously of the triangles before and
+              after splitting on pen and paper beforehand, then we coded our pointer assignments to follow the convention we drew out. We
+              arrived at a few bugs when splitting, but nothing that re-examining our code and noticing an assignment typo couldn't fix.
+              After finishing, we realized that we could split flipped edges, but we couldn't flip split edges, so we copied our code for split
+              into flip and downscaled the code to handle the flip case.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/15.png" align="middle" width="400px" />
+                          <figcaption align="middle">Without Split</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/16.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With Split</figcaption>
+                      </td>
+                  </tr>
+                  <br />
+                  <tr>
+                      <td>
+                          <img src="images/17.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With Split and Flip</figcaption>
+                          <\td>
+                          </\td>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+          <p>
+              We split each triangle into four triangles by first splitting every edge, then flipping only the edges that connected a
+              new point to an old point. Thus the splitting created the extra variables we needed, and the flipping reassigned them so that
+              the new triangles would subdivide the larger triangle. For finding the midpoint, we modified our split function, where we
+              used the edge position as our midpoint, where the edge position was found by the 3/8, 1/8, 3/16, 3 / (8n) weighting as described
+              in the project specs. After we finished our implementation, we noticed that our sub division algorithm made each point's
+              new position start at 0, thus creating a springy array of lines rather than a mesh. After debugging, we realized that our
+              weighting equation scaled down to integers, so each weight had a weight of 0. After converting our weights to floats, the
+              algorithm worked as expected and each sub division made the mesh smoother.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/18.png" align="middle" width="400px" />
+                          <figcaption align="middle">No sub division</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/19.png" align="middle" width="400px" />
+                          <figcaption align="middle">1 sub division</figcaption>
+                      </td>
+                  </tr>
+                  <br />
+                  <tr>
+                      <td>
+                          <img src="images/20.png" align="middle" width="400px" />
+                          <figcaption align="middle">2 sub divisions</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/21.png" align="middle" width="400px" />
+                          <figcaption align="middle">2 sub divisions</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+          <p>
+              The two images below compares and contrasts how sub division may affect sharp corners of
+              a mesh. The first image shows how the tea pot hole blends as it goes down, with no sub divisions. As we can see however, the last image has 3 sub divisions,
+              and now the tea pot hole is jagged with a clear and unnatural ring in the faucet. If we were to pre-sample this mesh first by splitting, we could reduce this
+              unnatural effect, as we will see in the cube example below.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/22.png" align="middle" width="400px" />
+                          <figcaption align="middle">Without sub divisions</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/23.png" align="middle" width="400px" />
+                          <figcaption align="middle"> With sub divisions</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+          <p>
+              In the cube example, we first see our cube before sub dividing. We hope to form a sphere with infinite sub divisions,
+              but with just a few sub divisions we see a shape asymmetric and distorted, which isn't the approximation of a sphere as we
+              hoped for. The issue is that our edges in the cube were already asymmetric, so sub dividing them only exacerbate that asymmetry.
+              To solve this, the third picture below demonstrates our pre-sampling technique. We split each face of our cube, so that
+              each face is now symmetric to each other, and then we sub divided our cube. Since our lines were symmetric, each sub division
+              kept that symmetry, so our cube better approximates a sphere, with no asymmetric distortions. as shown in the last image after a
+              few sub divisions.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/24.png" align="middle" width="400px" />
+                          <figcaption align="middle">Without sub divisions</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/25.png" align="middle" width="400px" />
+                          <figcaption align="middle">With sub divisions</figcaption>
+                      </td>
+                  </tr>
+                  <br />
+                  <tr>
+                      <td>
+                          <img src="images/26.png" align="middle" width="400px" />
+                          <figcaption align="middle">With Pre-Sampling with Splits</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/27.png" align="middle" width="400px" />
+                          <figcaption align="middle">Sub Dividing on the pre-sampled mesh</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          </table>
+
+      </div></body>
+
 </html>
