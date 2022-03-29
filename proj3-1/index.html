@@ -1,7 +1,427 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-1 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <style>
+        div.padded {
+            padding-top: 0px;
+            padding-right: 100px;
+            padding-bottom: 0.25in;
+            padding-left: 100px;
+        }
+    </style>
+    <title>Andrew Chen, Noah Schwartz  |  CS 184</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+    <br />
+    <h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Andrew Chen, Noah Schwartz</h2>
+
+    <h2>Webpage Link: https://github.com/cal-cs184-student/sp22-project-webpages-NoahSchwartz-Berkeley</h2>
+
+    <div class="padded">
+        <p>In this project, we used ray tracing to light objects in a scene. We first created the code to generate rays, and then used these generated rays to test for intersection with triangles and spheres. We then focused on optimizing the intersection speed, using bounding boxes such as BVH to reduce our time from #pixels * #objects to #pixels * log(#objects). Thus we created our Ray Tracing Acceleration algorithm. Next, we put our attention into direct illumination, where we implemented a one-bounce lighting technique, and summed that with either a one bounce hemisphere sampling or a one bounce importance sampling. We then extended our Direct Illumination to Global Illumination, where we take into account indirect lighting by adding luminance from reflective surfaces. Finally, we implemented adaptive sampling, allowing us to save time and processing power on areas and pixels that converge quickly while sampling more in more difficult and complex areas.</p>
+
+        <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+        <p>
+            We use Ray Generation to cast rays from the Image Space to the World Space. We first convert rays from the Image Space, where we are just given the ray’s direction with an x and y point, and using this, transform the ray into the Camera Space. We then give the ray an origin and normalize its direction to finish our transformation into World Space. Then our primitive intersection algorithm finds the points of intersection which result from our casted rays in World Space.
+        </p>
+        <p>
+            For our Primitive Intersection algorithm, we used Monte Carlo to generate rays at random directions, where we normalized our points to the Image Buffer width and heights before feeding them into our Generate Ray function. We then took the average of all of those rays, and updated our pixel’s x and y coordinate based on the ray we took.
+
+        </p>
+        <p>
+            In Triangle Intersection, we are given a triangle with its three vertices. We take in a ray, and we first find two edges of our triangle, and construct a third edge from our ray to our triangle. We take the cross product between our ray’s direction and one of our triangle edges to find the normal vector to that, and take the cross product between the ray and another edge to find the normal vector to this set. Taking the quotient of dot products between edges and these normal vectors gives us the projection we want of the normal vectors onto our ray triangle, which gives us the time of intersection. We then check if the time is positive (if it’s negative then that means the triangle is behind the camera, so we don’t render it). Then we check if the time is within our ray’s length, which checks to make sure there’s no other triangles in front of it which would block our light. Finally, we do a last check between the dot product quotients of our edges, normals, and ray, which gives us the max and minimum intersection times of our triangle with our ray. We check that both our max and min intersection times are valid in the x and y plane, then if it is, this means our ray intersects a valid piece of our triangle, so we render it and set our intersect variable with the time of intersection, the normal vector of our intersection (calculated from a normalized weighted sum of our normal vectors of the triangle with the respective max and min intersection times of the triangle with the ray), the intersection primitive to the triangle it intersected, the intersection’s bsdf to the triangle’s bsdf, and lastly we set our ray’s max length to the time of our intersection. Finally we return True, since we had a valid intersection.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-0.png" width="480px" />
+                        <figcaption align="middle">Simple Cube</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-1.png" width="480px" />
+                        <figcaption align="middle">Simple Plane</figcaption>
+                    </td>
+                </tr>
+            </table>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/p3-2.png" width="480px" />
+                            <figcaption align="middle">Bench</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+        <p>
+            To construct the bvh, we started by forming the bounding box that contains all the primitives. Then, we could divide the primitives along the longest axis, separating them on either side of the midpoint, as we thought that this heuristic would give us reasonably well divided halves. In most cases, it would make sense for half the shapes to be on one side of the longest axis. The split function and reorienting the pointers for the start and end of the list of primitives was done through std::partition. With our primitives on either side of the midpoint of the longest axis, we can recursively call construct_bvh on both halves and assign them to the left and right children of the current node, with the base case being that there are less primitives in the list than the max_leaf_size. For the edge case where all of the primitives are on one side of the midpoint, we move the pointer of the empty half by one primitive so a node will always contain at least one primitive when we construct the node.
+        </p>
+        <p>
+            The biggest dae files we could find were wall-e.dae (34.8mb), blob.dae (27.8mb), and CBlucy.dae(17.4mb). As shown here, all three render correctly and quickly.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-5.png" width="480px" />
+                        <figcaption align="middle">Statue</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-6.png" width="480px" />
+                        <figcaption align="middle">Wall-E</figcaption>
+                    </td>
+                </tr>
+            </table>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/p3-7.png" width="480px" />
+                            <figcaption align="middle">Blob</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <p>
+            When rendering blob.dae without Acceleration, our render time is roughly 314.3718 seconds, while rendering our blob.dae with Acceleration is roughly 0.11 seconds. The image appears the same in both techniques, but without using a tree-like data structure that our Acceleration BVH method presents, our rendering takes significantly longer. Using the BVH data structure, since in its nature the BVH is a tree structure, we are able to reduce our rendering time by the log of our number of objects to render. This is why rendering with Acceleration resulted in a much faster rendering speed than no Acceleration provided.
+        </p>
+
+        <h2 align="middle">Part 3: Direct Illumination</h2>
+
+        <p>
+            For our Hemisphere Lighting method, we first define our Object to World and World to Object transform matrices, which gives us our coordinate space and the vector pointing towards our ray. We then find the point on the nearest triangle that our ray intersects. We then loop through the number of samples we wish to take and find the ray from our point of intersection to the light source at random directions, with a random distribution along a hemisphere. We check if that ray does in fact intersect our light source, and if it does, we take the average of all those rays that do intersect our light source from the point of intersection of our original triangle, where the average consists of the reverse rays of our original intersection, multiplied with the emitted light, and the angle between our original ray and the normal of our triangle within our new coordinate system (which is just the normal (0, 0, 1) ). Following Monte Carlo randomness, we then divide by the probability of getting that ray along the hemisphere, which is exactly a 1/(2 PI) chance. Finally we divide our average by the number of samples we took, and return that vector as our light on the surface.
+            In contrast, our Importance Sampling method works by looping through every light in our scene first. If the light is a light source, we follow our logic for the Hemisphere Sampling, but instead of sampling from a hemisphere, we sample from the light source’s importance sampling method. If the light isn’t a light source, then we loop through all of our number of samples (via Monte Carlo like in Hemisphere Sampling), with again taking the random sample from the light itself, not the hemisphere. The rest is exactly the same as Hemisphere Sampling.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-30.png" width="480px" />
+                        <figcaption align="middle">Hemisphere Sampling</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-31.png" width="480px" />
+                        <figcaption align="middle">Importance Sampling</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-32.png" width="480px" />
+                        <figcaption align="middle">Hemisphere Sampling</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-33.png" width="480px" />
+                        <figcaption align="middle">Importance Sampling</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Now we will test our Importance Sampling with 1, 4, 16, and 64 light rays and compare how adding more light rays can suppress the noise of our image.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/34.png" width="480px" />
+                        <figcaption align="middle">1 light ray</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/35.png" width="480px" />
+                        <figcaption align="middle">4 light rays</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/36.png" width="480px" />
+                        <figcaption align="middle">16 light rays</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/37.png" width="480px" />
+                        <figcaption align="middle">64 light rays</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Uniform Hemisphere Sampling gives way to much more noise, as it deals with the Monte Carlo estimator by randomly casting rays from the surface to the light source in a hemisphere domain of directions. Thus we will ‘miss’ our light source much more frequently, thus giving way to many dark patches, which is our noise. In contrast, Lighting Sampling, or in other terms Importance Sampling, uses a Monte Carlo estimator where its randomness is directed towards the light source in question. With more light rays, we provide more data for our estimator, and we get sharper, cleaner edges without the dark patches, since we’re in a sense aiming towards our light instead of uniformly in a hemisphere of directions. Sometimes however Lighting Importance Sampling can be too sharp, where in real life shadows have much softer blurs. So it is important to balance these two techniques and master the benefits and drawbacks of each one. </p>
+
+
+        <h2 align="middle">Part 4: Global Illumination</h2>
+
+        <p>
+            Our implementation for indirect lighting for part 4 first checks the max_ray_depth. If it’s 0, we return a 0 vector. If it’s 1, then we use one_bounce_radiance. Otherwise, we proceed similarly to task 3, where we get a sample, construct a ray in world view using the sampled wi, and recursively add the radiance of where the new sampled ray goes next. The new radiances are scaled with the pdf and the termination probability, which we have set to 0.3. If the new ray doesn’t hit anything else in the scene or we have bounced max_ray_depth times, recursion stops.
+        </p>
+        <p>
+            Below are the images with 1024 samples per pixel.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-8.png" width="480px" />
+                        <figcaption align="middle">CBspheres_lambertian</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-9.png" width="480px" />
+                        <figcaption align="middle">Bench</figcaption>
+                    </td>
+                </tr>
+            </table>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/p3-10.png" width="480px" />
+                            <figcaption align="middle">Dragon</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <p>
+            Here is a comparison of only direct vs only indirect lighting. In direct lighting, we see the same type of image in task 3, where the only light that we see from the camera comes from one reflection off the main light source, and the light source itself. As for indirect lighting only, we don’t include the main light source so it remains black, and surfaces that directly face the light source turn to shadows and they’re directly lit. We do, however, isolate the light bouncing off the spheres and walls, so we can see the colored light from the walls on the spheres, the white light from the floor on the bottom of the spheres, and fainter white light bouncing off the walls, floor, and spheres back on the walls.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/40.png" width="480px" />
+                        <figcaption align="middle">Direct lighting only</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/41.png" width="480px" />
+                        <figcaption align="middle">Indirect lighting only</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Here we compare the sphere image with different max ray depths. The largest differences are at depth = 0 and depth = 1. Depth = 0 means we only see light from the light source on the ceiling, and nothing else since the ray doesn’t bounce off any surface. At max depth of 1, we get the same type of image as direct lighting only above, where we only see the light source and surfaces directly facing it. This means all the surfaces under the bunny, facing away from the light source, remain dark. At 2, 3, and 100 depth values, we get much better and realistic reflective lighting across the wall, floor, and bunny surfaces, illuminating surfaces that wouldn’t have been reached before. There should be slight improvements the more bounces/higher the depth, but we see diminishing returns because the luminance of consecutive bounces is decreased as it loses energy hitting surfaces, and we also have a 0.7 chance of terminating after the first bounce. This means that even though a ray depth of 100 bounces would be much more computation than 3 if we calculated every bounce, the chances of reaching high ray depth is very low, so we get similar results for all three images.</p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/42.png" width="480px" />
+                        <figcaption align="middle">Max depth of 0</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/43.png" width="480px" />
+                        <figcaption align="middle">Max depth of 1</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/44.png" width="480px" />
+                        <figcaption align="middle">Max depth of 2</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/45.png" width="480px" />
+                        <figcaption align="middle">Max depth of 3</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/46.png" width="480px" />
+                        <figcaption align="middle">Max depth of 100</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Below we test the Spheres with sample rates of 1, 2, 4, 8, 16, 64, and 1024 respectively. As we can see, when we have a higher sample rate, we cast more rays from our hit point on a mesh, which means we have a better model for hitting a light source or reflected light in our Monte Carlo estimator. Thus with more data, our images have less noise – since our Monte Carlo estimator is the average of more ray castings – and we converge to the true lighting. </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/47.png" width="480px" />
+                        <figcaption align="middle">sample rate = 1</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/48.png" width="480px" />
+                        <figcaption align="middle">sample rate = 2</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/49.png" width="480px" />
+                        <figcaption align="middle">sample rate = 4</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/410.png" width="480px" />
+                        <figcaption align="middle">sample rate = 8</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/411.png" width="480px" />
+                        <figcaption align="middle">sample rate = 16</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/412.png" width="480px" />
+                        <figcaption align="middle">sample rate = 64</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/413.png" width="480px" />
+                        <figcaption align="middle">sample rate = 1024</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+        <h2 align="middle">Part 5: Adaptive Sampling</h2>
+
+        <p>
+            For adaptive sampling, we would control the number of samples by checking if the pixel has converged. This is done using the given equation I≤maxTolerance⋅μ, where I is 1.96⋅σ/√​n​. We would sample in a similar manner as before, creating a ray with some added randomness and finding the average illuminance of our samples. Now, whenever we sampled batch-size times, we check whether the convergence condition above is met, at which point the function breaks and returns the average so far, cutting down on samples needed for pixels that converge quickly.
+        </p>
+        <p>
+            Here are the images of CBbunny.dae and its sampling rate image, run with these arguments:
+            ./pathtracer -t 16 -s 2048 -a 64 0.05 ‘l 1 ‘m 6 -f bunnyout.png -r 480 360
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p3-11.png" width="480px" />
+                        <figcaption align="middle">CBbunny</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        </o>
+    </div>
+
+    <p>Here, we can see that the more difficult parts of the image on the rabbit where there are more folds and changes in texture, sampling rate is higher and shown in red. Areas that are quick to converge such as the walls, floor, and light source are shown in blue.</p>
+    </o></div>
+</body>
 </html>
