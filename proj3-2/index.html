@@ -1,7 +1,192 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Noah Schwartz, Andrew Chen  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3: PathTracer</h1>
+    <h2 align="middle">Noah Schwartz, Andrew Chen</h2>
+
+    <div class="padded">
+        <p>Webpage Link: https://github.com/cal-cs184-student/sp22-project-webpages-NoahSchwartz-Berkeley</p>
+        <h1 align="middle">Overview</h1>
+        <p>We chose Part 1 and Part 4 to implement for this project. In Part 1, we made light reflect off of surfaces such as mirrors, and light both refract and reflect off of surfaces such as glass. In Part 4, we designed our camera focus depth to blur out unimportant depths of our image, and keep the depths we want highlighted in a clear, clean render. </p>
+
+        <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
+        <p>With ray depth of 0, we have, in effect, a zero bounce lighting, since the ray only travels from the light source directly to our lens. When ray depth is 1, we have 1 bounce, since the light bounces off the walls once, and bounces off the mirrors once as well, sending the wall renders and the reflected light source off of the mirrors into our lens. When ray depth is 2, we have 2 bounce. So we let light bounce off of the walls and into the mirrors, and bounce (reflect) off of them into our lens. Thus with 2 bounce, our mirrors show the walls around it, since the walls take 1 bounce to get to, and being reflected takes a second bounce. When ray depth is 3, we have 3 bounce. So light bounces off of the glass (gets refracted, 1 bounce), bounces off the walls (2 bounces), and goes back into the glass again to be reflected (3 bounces total). Thus we are able to see the glass material with 3 bounces. When ray depth is 4, we have the same three steps above, but now light bounces off the glass and into the second mirror, which reflects the glass’s image (4th bounce) into the lens. So with 4 bounces we can see the mirror reflecting the glass material’s image. Ray depths of 5 and 100 doesn’t add any new effects to our image.</p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_0.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 0</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_1.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 1</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_2.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 2</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_3.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 3</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_4.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 4</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_5.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 5</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part1_100.png" width="480px" />
+                        <figcaption align="middle">Ray Depth = 100</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+
+
+        <h2 align="middle">Part 4: Depth of Field</h2>
+        <p>A pinhole camera captures light that only passes through the pinhole. This creates an inverted version of the image where everything is in focus and has the same degree of sharpness, but with lower brightness. Our pinhole camera model creates images that receive radiance from one point at a time, traced by a ray that goes directly from the object to the image. In the thin lens model, the image can receive radiance from rays that go directly to the point in the image but also from other rays that hit the lens. Depending on what the depth is, we can focus the image at certain distances while blurring parts that are farther or closer than the focal distance.</p>
+        <p>Below are four images of the same dragon, but lens radius held fixed at 0.1, and the focal distance varrying between 8, 6, 4.5, and 2</p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=8.png" width="480px" />
+                        <figcaption align="middle">Focal Distance = 8</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=6.png" width="480px" />
+                        <figcaption align="middle">Focal Distance = 6</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=4.5.png" width="480px" />
+                        <figcaption align="middle">Focal Distance = 4.5</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=2.png" width="480px" />
+                        <figcaption align="middle">Focal Distance = 2</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Below are four more images, but now with the focal distance held fixed at 4.5, and the lens radius varrying between 10, 1, 0.2, 0.05.</p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=4_2_b=10.png" width="480px" />
+                        <figcaption align="middle">Lens Radius = 10</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=4_2_b=1.png" width="480px" />
+                        <figcaption align="middle">Lens Radius = 1</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=4_2_b=0.2.png" width="480px" />
+                        <figcaption align="middle">Lens Radius = 0.2</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/p4_1_d=4_2_b=0.05.png" width="480px" />
+                        <figcaption align="middle">Lens Radius = 0.05</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
 </html>
+
+
+
+
