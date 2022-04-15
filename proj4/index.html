@@ -1,7 +1,589 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+    <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2017</h1>
+    <h1 align="middle">Project 4: Cloth Simulator</h1>
+    <h2 align="middle">Noah Schwartz, Andrew Chen, CS184</h2>
+
+    <h2>Webpage Link: https://github.com/cal-cs184-student/sp22-project-webpages-NoahSchwartz-Berkeley</h2>
+
+    <br /><br />
+
+          <div>
+
+              <h2 align="middle">Overview</h2>
+              <p>In this project, we worked on creating the grid system for a cloth, where the cloth was made up of points and springs between them. We applied force (gravity and spring forces) to the points and simulated the cloth moving fluidly through space. We then focused on collision detection per individual point of the cloth (a form of Pixel Perfect Collision), where we allowed the cloth to realistically collide with spheres, planes, and even itself (where it could fold onto itself). Lastly, we rendered shading onto the cloth, thus making any texture or material we want with cloth-like properties. </p>
+
+              <h2 align="middle">Part I: Masses and springs</h2>
+
+              <p>Below are images of our grid.</p>
+
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-0.png" width="480px" />
+                              <figcaption align="middle">Grid from random angle</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-1.png" width="480px" />
+                              <figcaption align="middle">Grid from random angle</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-2.png" width="480px" />
+                              <figcaption align="middle">Grid from random angle</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-3.png" width="480px" />
+                              <figcaption align="middle">No Shearing</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-4.png" width="480px" />
+                              <figcaption align="middle">Only Shearing</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p1-5.png" width="480px" />
+                              <figcaption align="middle">All constraints</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <h2 align="middle">Part II: Simulation via numerical integration</h2>
+
+              <p>The lower the spring constant gets, the less our cloth bends and the straighter our result becomes. This is because there isn’t much force pulling the springs together, so the cloth behaves more like individual points falling down than one unified object. In contrast, when the spring constant is high, the fabric bends and folds more, because there’s stronger force keeping the points together. Since a cloth is one unified object, a higher spring constant is usually more realistic. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-0.png" width="480px" />
+                              <figcaption align="middle">Reducing Spring Constant</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-1.png" width="480px" />
+                              <figcaption align="middle">Increasing Spring Constant</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <p>Likewise, when density is decreased, the cloth falls flat, where it sinks down in every point almost equally. This sinking follows from the fact that with less dense objects, each point is again treated more independently of each other, so they fall independently of each other, all uniformly since they have a uniform force of gravity acting on them. However, when density is increased, the very ends of the fabric furthest away from the pins fall first. Then those furthest away points carry the points near it down too, and thus the whole fabric falls naturally (except for the two pinned points of course). With more density, the fall is much more realistic, since in real life the furthest points from the pinned points would be affected by force movements first. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-2.png" width="480px" />
+                              <figcaption align="middle">Reducing Density</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-3.png" width="480px" />
+                              <figcaption align="middle">Increasing Density</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <p>Finally, when damping is decreased, the fabric falls a bit curled inwards, but otherwise mostly straight. In contrast, when the damping is high, the cloth folds within itself much more while falling. This observation makes sense, since the more damped a system is, the more spring forces would affect it, so the more complex inner folds would develop as the whole fabric moves with gravity. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-4.png" width="480px" />
+                              <figcaption align="middle">Reducing Damping</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-5.png" width="480px" />
+                              <figcaption align="middle">Increasing Damping</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <p>Below are a few angles of a four pinned cloth. We modified the parameters slightly to make the spring constant 10,000 as opposed to 5,000, as we thought a higher spring constant looked visually more realistic and smoother. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-6.png" width="480px" />
+                              <figcaption align="middle">4-pinned cloth</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-7.png" width="480px" />
+                              <figcaption align="middle">4-pinned cloth</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p2-8.png" width="480px" />
+                              <figcaption align="middle">4-pinned cloth</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <h2 align="middle">Part III: Handling collisions with other objects</h2>
+
+              <p>When we test sphere collision with spring constants 5000, 500, and 50000, we notice that the higher spring constants, the much more our fabric bends. Since self collisions haven’t been implemented yet, we noticed that the cloth can bend out of itself, jetting out of its fabric like a glitchy game. For the case of sphere collision, a less bendy drape is more natural than an overly curled drape, so the spring constant of 500 appears the most realistic if we were to assume we had normal, light and malleable cloth. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p3-0.png" width="480px" />
+                              <figcaption align="middle">ks = 5000</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p3-1.png" width="480px" />
+                              <figcaption align="middle">ks = 500</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p3-2.png" width="480px" />
+                              <figcaption align="middle">ks = 50000</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+
+
+              </div>
+
+              <p>Below is our cloth colliding with and resting on top a plane.</p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p3-3.png" width="480px" />
+                              <figcaption align="middle">Plane Intersection</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+
+              <h2 align="middle">Part IV: Handling self-collisions</h2>
+
+              <p>Below are three images of our cloth in the process of falling. At the beginning of the fall, in the middle of the fall, and at the resting spot.</p>
+              <p>Below is our cloth colliding with and resting on top a plane.</p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-0.png" width="480px" />
+                              <figcaption align="middle">Beginning of Fall</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-1.png" width="480px" />
+                              <figcaption align="middle">Middle of Fall</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-2.png" width="480px" />
+                              <figcaption align="middle">At Rest</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <p>Now we compare the At Rest time with different degrees of density and spring constants.</p>
+
+              <p>
+                  As we see below, when the density is lower, our cloth folds outwards. When density is higher, the cloth folds inwards. This observation makes sense because, the more dense an object is, the more it’ll pull itself inwards. And the less dense an object is, the more it’ll spread out.
+              </p>
+
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-3.png" width="480px" />
+                              <figcaption align="middle">Low Density</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-4.png" width="480px" />
+                              <figcaption align="middle">High Density</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <p>Next, when the spring constant is lower, our points aren’t attracted to each other as much, so the folding appears very wrinkly and bumpy because the points are behaving more independently of each other. While when the spring constant is higher, each point is very dependent on one another, so the folding looks smoother and less wrinkly. </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-5.png" width="480px" />
+                              <figcaption align="middle">Small Spring Constant</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p4-6.png" width="480px" />
+                              <figcaption align="middle">Large Spring Constant</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <h2 align="middle">Part V: Shaders</h2>
+
+              <h2 align="middle">Part V (Task I): Diffuse Shading</h2>
+
+              <p>A shader program runs separately on the GPU and allows us to create rendering effects on 3D models. The vertex shader allows us to modify vertex positions and how they are translated from 3D to 2D space, whereas the fragment shader allows us to control the color, which in turns allows us to create shadows, bumps, and lighting effects. Together the two shaders create better, more complex effects such as displacement mapping.</p>
+
+
+              <h2 align="middle">Part V (Task II): Blinn-Phong Shading</h2>
+
+              <p>The Blinn-Phong shading model combines the ambient lighting, the diffuse lighting that is shown evenly across a surface, and specular lighting that will show bright areas where light reflects into our view at the mirror angle of the light source. Combined, these three lightings are the Blinn-Phong model and create a realistic lighting effect on our 3D objects.</p>
+
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-10.png" width="480px" />
+                              <figcaption align="middle">Ambient only</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-11.png" width="480px" />
+                              <figcaption align="middle">Diffuse only</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-12.png" width="480px" />
+                              <figcaption align="middle">Specular only</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-13.png" width="480px" />
+                              <figcaption align="middle">Entire model</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <h2 align="middle">Part V (Task III): Texture Mapping</h2>
+
+              <p>Below are three images of our texture mapping from different angles different times. We chose a picture of the Canadian Giant Rubber Duck as our texture pack. We hope you enjoy! </p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-30.png" width="480px" />
+                              <figcaption align="middle">Before the Fall</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-31.png" width="480px" />
+                              <figcaption align="middle">Angle 1</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-32.png" width="480px" />
+                              <figcaption align="middle">Angle 2</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <h2 align="middle">Part V (Task IV): Displacement and Bump Mapping</h2>
+
+              <p>Below are images of our Sphere and cloth (pre fall and post fall) using Bump and Displacement, using the same Giant Rubber Ruck texture from Task 3.</p>
+              <p>In both the bump mapping and displacement mapping, we can see our custom texture, which is a picture of the largest rubber duck in the world. Although we can see the texture pattern in both, the displacement mapping is much more detailed and complex. Bump mapping can only change colors, so it can only show a rudimentary perception of depth, whereas displacement mapping provides actual depth that shows the texture in lighting much better. The deeper shadows and brighter highlights improve the look of the texture a lot.</p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-40.png" width="480px" />
+                              <figcaption align="middle">Bump, Before Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-42.png" width="480px" />
+                              <figcaption align="middle">Displacement, Before Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-41.png" width="480px" />
+                              <figcaption align="middle">Bump, After Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-43.png" width="480px" />
+                              <figcaption align="middle">Displacement, After Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+              <p>When changing the vertical and horizontal resolution from 16 to 128, it was honestly very difficult to tell differences between two. For bump mapping, we thought they looked essentially the same. For displacement mapping, we could see slightly more detailed edges in the textures. Lighting in the higher resolution images was slightly more even as well. These effects are shown below.</p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-44.png" width="480px" />
+                              <figcaption align="middle">Bump, Before Falling, -16</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-46.png" width="480px" />
+                              <figcaption align="middle">Displacement, Before Falling, -16</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-45.png" width="480px" />
+                              <figcaption align="middle">Bump, After Falling, -16</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-47.png" width="480px" />
+                              <figcaption align="middle">Displacement, After Falling, -16</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-48.png" width="480px" />
+                              <figcaption align="middle">Bump, Before Falling, -128</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-490.png" width="480px" />
+                              <figcaption align="middle">Displacement, Before Falling, -128</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-49.png" width="480px" />
+                              <figcaption align="middle">Bump, After Falling, -128</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-491.png" width="480px" />
+                              <figcaption align="middle">Displacement, After Falling, -128</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+
+              <h2 align="middle">Part V (Task V): Environment-mapped Reflections</h2>
+
+              <p>Below is our mirror from before the cloth falls and after the cloth falls.</p>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-50.png" width="480px" />
+                              <figcaption align="middle">Mirror, Before Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+              <div align="center">
+                  <table style="width=100%">
+                      <tr>
+                          <td align="middle">
+                              <img src="images/p5-51.png" width="480px" />
+                              <figcaption align="middle">Mirror, After Falling</figcaption>
+                          </td>
+                      </tr>
+                  </table>
+              </div>
+
+
+
+
+
+          </div></body>
 </html>
